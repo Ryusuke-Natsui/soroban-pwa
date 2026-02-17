@@ -314,74 +314,82 @@ function padLeft(s, width) {
   return " ".repeat(width - str.length) + str;
 }
 
+function formatNumber(n) {
+  return Number(n).toLocaleString("ja-JP");
+}
+
 function formatVerticalAddSub(p, showAnswer) {
   // 右寄せ：符号列(2) + 数字列(width)
-  const width = Math.max(...p.nums.map(n => String(Math.abs(n)).length));
+  const formattedNums = p.nums.map(formatNumber);
+  const formattedAnswer = formatNumber(p.answer);
+  const width = Math.max(
+    ...formattedNums.map(v => v.length),
+    showAnswer ? formattedAnswer.length : 0
+  );
   const lines = [];
 
   // 1行目（符号なし）
-  lines.push("  " + padLeft(p.nums[0], width));
+  lines.push("  " + padLeft(formattedNums[0], width));
 
   for (let i = 1; i < p.nums.length; i++) {
     const op = p.ops[i - 1];
-    lines.push(op + " " + padLeft(p.nums[i], width));
+    lines.push(op + " " + padLeft(formattedNums[i], width));
   }
   lines.push("—".repeat(width + 2));
 
-  if (showAnswer) lines.push("  " + padLeft(p.answer, width));
+  if (showAnswer) lines.push("  " + padLeft(formattedAnswer, width));
   return lines.join("\n");
 }
 
 function formatHorizontalAddSub(p, showAnswer) {
-  let expr = String(p.nums[0]);
+  let expr = formatNumber(p.nums[0]);
   for (let i = 1; i < p.nums.length; i++) {
-    expr += " " + p.ops[i - 1] + " " + String(p.nums[i]);
+    expr += " " + p.ops[i - 1] + " " + formatNumber(p.nums[i]);
   }
-  if (showAnswer) expr += " = " + p.answer;
+  if (showAnswer) expr += " = " + formatNumber(p.answer);
   return expr;
 }
 
 function formatVerticalMul(p, showAnswer) {
-  const a = String(p.a), b = String(p.b);
-  const width = Math.max(a.length, b.length);
+  const a = formatNumber(p.a), b = formatNumber(p.b);
+  const answer = formatNumber(p.answer);
+  const width = Math.max(a.length, b.length, showAnswer ? answer.length : 0);
   const lines = [];
   lines.push("  " + padLeft(a, width));
   lines.push("× " + padLeft(b, width));
   lines.push("—".repeat(width + 2));
-  if (showAnswer) lines.push("  " + padLeft(p.answer, width));
+  if (showAnswer) lines.push("  " + padLeft(answer, width));
   return lines.join("\n");
 }
 
 function formatHorizontalMul(p, showAnswer) {
-  let s = `${p.a} × ${p.b}`;
-  if (showAnswer) s += ` = ${p.answer}`;
+  let s = `${formatNumber(p.a)} × ${formatNumber(p.b)}`;
+  if (showAnswer) s += ` = ${formatNumber(p.answer)}`;
   return s;
 }
 
 function formatVerticalDiv(p, showAnswer) {
   // ひっ算“風”：上に割られる数、下に ÷ 除数
-  const a = String(p.dividend), b = String(p.divisor);
-  const width = Math.max(a.length, b.length);
+  const a = formatNumber(p.dividend), b = formatNumber(p.divisor);
+  const quotient = formatNumber(p.quotient);
+  const remainder = formatNumber(p.remainder);
+  const answer = p.remainder === 0 ? quotient : `${quotient} あまり ${remainder}`;
+  const width = Math.max(a.length, b.length, showAnswer ? answer.length : 0);
   const lines = [];
   lines.push("  " + padLeft(a, width));
   lines.push("÷ " + padLeft(b, width));
   lines.push("—".repeat(width + 2));
   if (showAnswer) {
-    if (p.remainder === 0) {
-      lines.push("  " + padLeft(p.quotient, width));
-    } else {
-      const ans = `${p.quotient} あまり ${p.remainder}`;
-      lines.push("  " + ans);
-    }
+    lines.push("  " + padLeft(answer, width));
   }
   return lines.join("\n");
 }
 
 function formatHorizontalDiv(p, showAnswer) {
-  let s = `${p.dividend} ÷ ${p.divisor}`;
+  let s = `${formatNumber(p.dividend)} ÷ ${formatNumber(p.divisor)}`;
   if (showAnswer) {
-    if (p.remainder === 0) s += ` = ${p.quotient}`;
-    else s += ` = ${p.quotient} あまり ${p.remainder}`;
+    if (p.remainder === 0) s += ` = ${formatNumber(p.quotient)}`;
+    else s += ` = ${formatNumber(p.quotient)} あまり ${formatNumber(p.remainder)}`;
   }
   return s;
 }
