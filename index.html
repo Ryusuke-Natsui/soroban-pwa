@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>そろばん問題ジェネレータ</title>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ffffff" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="wrap">
+    <div class="title">
+      <h1>そろばん問題ジェネレータ</h1>
+      <p>スマホ・PCで使える / オフライン対応（PWA）</p>
+    </div>
+    <div class="top-actions">
+      <button id="btnGenerate" class="primary">生成</button>
+      <button id="btnPrint">印刷</button>
+      <button id="btnCopy">コピー</button>
+      <button id="btnDownload">TXT保存</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <h2>設定</h2>
+
+      <div class="grid">
+        <label class="field">
+          <span>問題タイプ</span>
+          <select id="problemKind">
+            <option value="addsub" selected>足し算 / 引き算</option>
+            <option value="mul">掛け算</option>
+            <option value="div">割り算</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>問題数</span>
+          <input id="count" type="number" min="1" max="500" value="20" />
+        </label>
+
+        <label class="field">
+          <span>表示</span>
+          <select id="layout">
+            <option value="vertical" selected>縦書き（ひっ算風）</option>
+            <option value="horizontal">横書き（式）</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>解答を表示</span>
+          <select id="showAnswers">
+            <option value="no" selected>しない</option>
+            <option value="yes">する</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Seed（再現用・任意）</span>
+          <input id="seed" type="text" placeholder="空なら毎回ランダム" />
+        </label>
+
+        <label class="field">
+          <span>1ページの列数（PC向け）</span>
+          <select id="columns">
+            <option value="1">1列</option>
+            <option value="2" selected>2列</option>
+            <option value="3">3列</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="addsubOptions" class="subpanel">
+        <h3>足し算 / 引き算</h3>
+        <div class="grid">
+          <label class="field">
+            <span>モード</span>
+            <select id="addsubMode">
+              <option value="mixed" selected>混合</option>
+              <option value="add">足し算のみ</option>
+              <option value="sub">引き算のみ</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>桁数</span>
+            <input id="digits" type="number" min="1" max="9" value="3" />
+          </label>
+
+          <label class="field">
+            <span>項数（行数）</span>
+            <input id="terms" type="number" min="2" max="50" value="6" />
+          </label>
+
+          <label class="field">
+            <span>途中で負を禁止</span>
+            <select id="noNegative">
+              <option value="yes" selected>はい</option>
+              <option value="no">いいえ</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>桁数を厳密に固定</span>
+            <select id="exactDigits">
+              <option value="no" selected>しない（1〜指定桁）</option>
+              <option value="yes">する（指定桁ぴったり）</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>0を許す（厳密固定=はいの時は制限あり）</span>
+            <select id="allowZero">
+              <option value="no" selected>許さない</option>
+              <option value="yes">許す</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>混合時の「引き算」割合</span>
+            <input id="subRate" type="number" min="0" max="100" value="40" />
+          </label>
+        </div>
+        <p class="hint">
+          ※「引き算のみ」かつ「厳密固定」かつ「途中で負を禁止」など、条件が厳しいと生成不可能になる場合があります。そのときはエラー表示します。
+        </p>
+      </div>
+
+      <div id="mulOptions" class="subpanel hidden">
+        <h3>掛け算</h3>
+        <div class="grid">
+          <label class="field">
+            <span>被乗数の桁数</span>
+            <input id="mulDigitsA" type="number" min="1" max="9" value="3" />
+          </label>
+          <label class="field">
+            <span>乗数の桁数</span>
+            <input id="mulDigitsB" type="number" min="1" max="9" value="1" />
+          </label>
+          <label class="field">
+            <span>桁数を厳密に固定</span>
+            <select id="mulExact">
+              <option value="no" selected>しない</option>
+              <option value="yes">する</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>0を許す</span>
+            <select id="mulAllowZero">
+              <option value="no" selected>許さない</option>
+              <option value="yes">許す</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div id="divOptions" class="subpanel hidden">
+        <h3>割り算</h3>
+        <div class="grid">
+          <label class="field">
+            <span>割る数（除数）の桁数</span>
+            <input id="divDigitsDivisor" type="number" min="1" max="6" value="1" />
+          </label>
+          <label class="field">
+            <span>商の桁数</span>
+            <input id="divDigitsQuot" type="number" min="1" max="8" value="3" />
+          </label>
+          <label class="field">
+            <span>割り切れる問題のみ</span>
+            <select id="divExact">
+              <option value="yes" selected>はい（余りなし）</option>
+              <option value="no">いいえ（余りあり）</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>0を許す</span>
+            <select id="divAllowZero">
+              <option value="no" selected>許さない</option>
+              <option value="yes">許す</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div id="errorBox" class="error hidden"></div>
+    </section>
+
+    <section class="panel">
+      <h2>出力</h2>
+      <div id="outputMeta" class="meta"></div>
+      <div id="output" class="problems"></div>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <small>※ ホーム画面に追加したい場合：ブラウザの共有/メニュー → 「ホーム画面に追加」（iOS）や「インストール」（Android/PC）</small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
