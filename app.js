@@ -474,7 +474,8 @@ function generate() {
           : formatHorizontalDiv(p, showAnswers);
       }
 
-      problems.push({ text });
+      const numberedText = `第${i + 1}問\n${text}`;
+      problems.push({ text: numberedText });
     }
 
     const meta = [
