@@ -80,6 +80,10 @@ const el = {
   btnPrint: $("btnPrint"),
   btnCopy: $("btnCopy"),
   btnDownload: $("btnDownload"),
+
+  stopwatchDisplay: $("stopwatchDisplay"),
+  btnStartStopwatch: $("btnStartStopwatch"),
+  btnStopStopwatch: $("btnStopStopwatch"),
 };
 
 // ------- UI helpers -------
@@ -413,6 +417,43 @@ function collectAllText() {
   return blocks.join("\n\n");
 }
 
+
+// ------- stopwatch -------
+let stopwatchTimerId = null;
+let stopwatchStartAt = 0;
+let stopwatchElapsedMs = 0;
+
+function formatStopwatch(ms) {
+  const totalTenths = Math.floor(ms / 100);
+  const minutes = Math.floor(totalTenths / 600);
+  const seconds = Math.floor((totalTenths % 600) / 10);
+  const tenths = totalTenths % 10;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${tenths}`;
+}
+
+function updateStopwatchDisplay(ms) {
+  el.stopwatchDisplay.textContent = formatStopwatch(ms);
+}
+
+function startStopwatch() {
+  if (stopwatchTimerId !== null) return;
+  stopwatchStartAt = Date.now() - stopwatchElapsedMs;
+  stopwatchTimerId = window.setInterval(() => {
+    stopwatchElapsedMs = Date.now() - stopwatchStartAt;
+    updateStopwatchDisplay(stopwatchElapsedMs);
+  }, 100);
+}
+
+function stopStopwatch() {
+  if (stopwatchTimerId === null) return;
+  window.clearInterval(stopwatchTimerId);
+  stopwatchTimerId = null;
+  stopwatchElapsedMs = Date.now() - stopwatchStartAt;
+  updateStopwatchDisplay(stopwatchElapsedMs);
+}
+
+updateStopwatchDisplay(0);
+
 // ------- main generate -------
 function generate() {
   setError("");
@@ -520,6 +561,8 @@ el.btnDownload.addEventListener("click", () => {
   a.click();
   URL.revokeObjectURL(url);
 });
+el.btnStartStopwatch.addEventListener("click", startStopwatch);
+el.btnStopStopwatch.addEventListener("click", stopStopwatch);
 
 // 初回生成
 generate();
