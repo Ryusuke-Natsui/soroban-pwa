@@ -84,6 +84,7 @@ const el = {
   stopwatchDisplay: $("stopwatchDisplay"),
   btnStartStopwatch: $("btnStartStopwatch"),
   btnStopStopwatch: $("btnStopStopwatch"),
+  btnResetStopwatch: $("btnResetStopwatch"),
 };
 
 // ------- UI helpers -------
@@ -452,6 +453,16 @@ function stopStopwatch() {
   updateStopwatchDisplay(stopwatchElapsedMs);
 }
 
+function resetStopwatch() {
+  if (stopwatchTimerId !== null) {
+    window.clearInterval(stopwatchTimerId);
+    stopwatchTimerId = null;
+  }
+  stopwatchStartAt = 0;
+  stopwatchElapsedMs = 0;
+  updateStopwatchDisplay(0);
+}
+
 updateStopwatchDisplay(0);
 
 // ------- main generate -------
@@ -563,6 +574,7 @@ el.btnDownload.addEventListener("click", () => {
 });
 el.btnStartStopwatch.addEventListener("click", startStopwatch);
 el.btnStopStopwatch.addEventListener("click", stopStopwatch);
+el.btnResetStopwatch.addEventListener("click", resetStopwatch);
 
 // 初回生成
 generate();
