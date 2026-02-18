@@ -82,8 +82,7 @@ const el = {
   btnDownload: $("btnDownload"),
 
   stopwatchDisplay: $("stopwatchDisplay"),
-  btnStartStopwatch: $("btnStartStopwatch"),
-  btnStopStopwatch: $("btnStopStopwatch"),
+  btnToggleStopwatch: $("btnToggleStopwatch"),
   btnResetStopwatch: $("btnResetStopwatch"),
 };
 
@@ -436,6 +435,10 @@ function updateStopwatchDisplay(ms) {
   el.stopwatchDisplay.textContent = formatStopwatch(ms);
 }
 
+function updateStopwatchToggleLabel() {
+  el.btnToggleStopwatch.textContent = (stopwatchTimerId === null) ? "スタート" : "ストップ";
+}
+
 function startStopwatch() {
   if (stopwatchTimerId !== null) return;
   stopwatchStartAt = Date.now() - stopwatchElapsedMs;
@@ -443,6 +446,7 @@ function startStopwatch() {
     stopwatchElapsedMs = Date.now() - stopwatchStartAt;
     updateStopwatchDisplay(stopwatchElapsedMs);
   }, 100);
+  updateStopwatchToggleLabel();
 }
 
 function stopStopwatch() {
@@ -451,6 +455,15 @@ function stopStopwatch() {
   stopwatchTimerId = null;
   stopwatchElapsedMs = Date.now() - stopwatchStartAt;
   updateStopwatchDisplay(stopwatchElapsedMs);
+  updateStopwatchToggleLabel();
+}
+
+function toggleStopwatch() {
+  if (stopwatchTimerId === null) {
+    startStopwatch();
+  } else {
+    stopStopwatch();
+  }
 }
 
 function resetStopwatch() {
@@ -461,9 +474,11 @@ function resetStopwatch() {
   stopwatchStartAt = 0;
   stopwatchElapsedMs = 0;
   updateStopwatchDisplay(0);
+  updateStopwatchToggleLabel();
 }
 
 updateStopwatchDisplay(0);
+updateStopwatchToggleLabel();
 
 // ------- main generate -------
 function generate() {
@@ -572,8 +587,7 @@ el.btnDownload.addEventListener("click", () => {
   a.click();
   URL.revokeObjectURL(url);
 });
-el.btnStartStopwatch.addEventListener("click", startStopwatch);
-el.btnStopStopwatch.addEventListener("click", stopStopwatch);
+el.btnToggleStopwatch.addEventListener("click", toggleStopwatch);
 el.btnResetStopwatch.addEventListener("click", resetStopwatch);
 
 // 初回生成

@@ -125,6 +125,15 @@ main{ display:grid; grid-template-columns: 1fr; gap:14px; }
   gap:8px;
 }
 
+.stopwatch-toggle{
+  border-color:#c66812;
+  background:#f28f2b;
+  color:#fff;
+}
+.stopwatch-toggle:hover{
+  background:#df7f20;
+}
+
 .meta{
   color:var(--muted);
   font-size:12px;
