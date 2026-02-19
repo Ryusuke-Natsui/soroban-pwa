@@ -50,6 +50,8 @@ const el = {
   showAnswers: $("showAnswers"),
   seed: $("seed"),
   columns: $("columns"),
+  flashOptions: $("flashOptions"),
+  flashSpeed: $("flashSpeed"),
 
   addsubOptions: $("addsubOptions"),
   mode: $("addsubMode"),
@@ -75,6 +77,13 @@ const el = {
   output: $("output"),
   meta: $("outputMeta"),
   errorBox: $("errorBox"),
+  flashBoard: $("flashBoard"),
+  flashProgress: $("flashProgress"),
+  flashDisplay: $("flashDisplay"),
+  btnFlashStart: $("btnFlashStart"),
+  btnFlashPrev: $("btnFlashPrev"),
+  btnFlashNext: $("btnFlashNext"),
+  btnFlashShowAnswer: $("btnFlashShowAnswer"),
 
   btnGenerate: $("btnGenerate"),
   btnPrint: $("btnPrint"),
@@ -102,6 +111,7 @@ function updateOptionsVisibility() {
   el.addsubOptions.classList.toggle("hidden", kind !== "addsub");
   el.mulOptions.classList.toggle("hidden", kind !== "mul");
   el.divOptions.classList.toggle("hidden", kind !== "div");
+  el.flashOptions.classList.toggle("hidden", el.layout.value !== "flash");
 }
 
 function applyColumns() {
@@ -112,6 +122,13 @@ function applyColumns() {
 el.kind.addEventListener("change", () => {
   updateOptionsVisibility();
   setError("");
+});
+el.layout.addEventListener("change", () => {
+  updateOptionsVisibility();
+  if (el.layout.value !== "flash") {
+    setFlashModeVisibility(false);
+    stopFlashPlayback();
+  }
 });
 el.columns.addEventListener("change", applyColumns);
 applyColumns();
@@ -418,6 +435,73 @@ function collectAllText() {
 }
 
 
+
+
+// ------- flash mode -------
+let flashProblems = [];
+let flashIndex = 0;
+let flashTimerId = null;
+
+function stopFlashPlayback() {
+  if (flashTimerId !== null) {
+    window.clearTimeout(flashTimerId);
+    flashTimerId = null;
+  }
+}
+
+function getFlashPrompt(problem) {
+  if (!problem || problem.kind !== "addsub") return "この表示では足し算 / 引き算のみ対応です";
+  return `第${flashIndex + 1}問を開始`;
+}
+
+function getFlashAnswerText(problem) {
+  if (!problem || problem.kind !== "addsub") return "";
+  return `答え: ${formatNumber(problem.answer)}`;
+}
+
+function updateFlashBoard() {
+  const total = flashProblems.length;
+  if (!total) {
+    el.flashProgress.textContent = "問題がありません";
+    el.flashDisplay.textContent = "生成してください";
+    return;
+  }
+  el.flashProgress.textContent = `第${flashIndex + 1}問 / ${total}問`;
+  el.flashDisplay.textContent = getFlashPrompt(flashProblems[flashIndex]);
+}
+
+function setFlashModeVisibility(isFlash) {
+  el.flashBoard.classList.toggle("hidden", !isFlash);
+  el.output.classList.toggle("hidden", isFlash);
+}
+
+function playFlashCurrentProblem() {
+  const problem = flashProblems[flashIndex];
+  if (!problem || problem.kind !== "addsub") {
+    updateFlashBoard();
+    return;
+  }
+
+  stopFlashPlayback();
+  const speed = Math.max(200, parseInt(el.flashSpeed.value, 10) || 800);
+  const sequence = [problem.nums[0], ...problem.nums.slice(1).map((n, i) => `${problem.ops[i]}${n}`)];
+  let step = 0;
+
+  const showStep = () => {
+    if (step >= sequence.length) {
+      el.flashDisplay.textContent = "終了（答えを表示で確認）";
+      flashTimerId = null;
+      return;
+    }
+    el.flashDisplay.textContent = String(sequence[step]);
+    step += 1;
+    flashTimerId = window.setTimeout(showStep, speed);
+  };
+
+  showStep();
+}
+
+
 // ------- stopwatch -------
 let stopwatchTimerId = null;
 let stopwatchStartAt = 0;
@@ -495,6 +579,11 @@ function generate() {
   const problems = [];
   const startedAt = new Date();
 
+  if (layout === "flash" && kind !== "addsub") {
+    setError("フラッシュ暗算モードは『足し算 / 引き算』で利用してください。");
+    return;
+  }
+
   try {
     for (let i = 0; i < count; i++) {
       let p, text;
@@ -542,19 +631,30 @@ function generate() {
       }
 
       const numberedText = `第${i + 1}問\n${text}`;
-      problems.push({ text: numberedText });
+      problems.push({ text: numberedText, raw: p });
     }
 
     const meta = [
       `種類: ${kind === "addsub" ? "足し算/引き算" : kind === "mul" ? "掛け算" : "割り算"}`,
       `問題数: ${count}`,
-      `表示: ${layout === "vertical" ? "縦書き（ひっ算風）" : "横書き（式）"}`,
+      `表示: ${layout === "vertical" ? "縦書き（ひっ算風）" : layout === "horizontal" ? "横書き（式）" : "フラッシュ暗算"}`,
       `解答: ${showAnswers ? "表示" : "非表示"}`,
       `seed: ${seedInput ? seedStr : "(未指定: 自動)"}`,
       `生成時刻: ${startedAt.toLocaleString()}`,
     ].join(" / ");
 
     renderProblems(problems, meta);
+
+    const isFlash = (layout === "flash");
+    setFlashModeVisibility(isFlash);
+    stopFlashPlayback();
+    if (isFlash) {
+      flashProblems = problems.map((v) => v.raw).filter(Boolean);
+      flashIndex = 0;
+      updateFlashBoard();
+    } else {
+      flashProblems = [];
+    }
   } catch (e) {
     setError(String(e.message || e));
   }
@@ -586,6 +686,23 @@ el.btnDownload.addEventListener("click", () => {
   a.download = "soroban_problems.txt";
   a.click();
   URL.revokeObjectURL(url);
+});
+el.btnFlashStart.addEventListener("click", playFlashCurrentProblem);
+el.btnFlashShowAnswer.addEventListener("click", () => {
+  stopFlashPlayback();
+  el.flashDisplay.textContent = getFlashAnswerText(flashProblems[flashIndex]);
+});
+el.btnFlashPrev.addEventListener("click", () => {
+  if (!flashProblems.length) return;
+  stopFlashPlayback();
+  flashIndex = (flashIndex - 1 + flashProblems.length) % flashProblems.length;
+  updateFlashBoard();
+});
+el.btnFlashNext.addEventListener("click", () => {
+  if (!flashProblems.length) return;
+  stopFlashPlayback();
+  flashIndex = (flashIndex + 1) % flashProblems.length;
+  updateFlashBoard();
 });
 el.btnToggleStopwatch.addEventListener("click", toggleStopwatch);
 el.btnResetStopwatch.addEventListener("click", resetStopwatch);

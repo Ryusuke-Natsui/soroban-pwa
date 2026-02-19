@@ -48,6 +48,7 @@
           <select id="layout">
             <option value="vertical" selected>縦書き（ひっ算風）</option>
             <option value="horizontal">横書き（式）</option>
+            <option value="flash">フラッシュ暗算モード</option>
           </select>
         </label>
 
@@ -186,12 +187,38 @@
         </div>
       </div>
 
+
+
+      <div id="flashOptions" class="subpanel hidden">
+        <h3>フラッシュ暗算モード</h3>
+        <div class="grid">
+          <label class="field">
+            <span>表示間隔（ミリ秒）</span>
+            <input id="flashSpeed" type="number" min="200" max="5000" step="100" value="800" />
+          </label>
+        </div>
+        <p class="hint">※「開始」を押すと、各問題の数字が順番に表示されます。表示後に答えを確認できます。</p>
+      </div>
+
       <div id="errorBox" class="error hidden"></div>
     </section>
 
     <section class="panel">
       <h2>出力</h2>
       <div id="outputMeta" class="meta"></div>
+
+      <div id="flashBoard" class="flash-board hidden" aria-live="polite">
+        <div class="flash-header">
+          <strong id="flashProgress">第1問 / 1問</strong>
+          <button id="btnFlashShowAnswer" type="button">答えを表示</button>
+        </div>
+        <div id="flashDisplay" class="flash-display">準備OK</div>
+        <div class="flash-actions">
+          <button id="btnFlashPrev" type="button">前の問題</button>
+          <button id="btnFlashStart" type="button" class="primary">開始 / 再生</button>
+          <button id="btnFlashNext" type="button">次の問題</button>
+        </div>
+      </div>
       <div class="stopwatch" aria-label="ストップウォッチ">
         <strong>計測</strong>
         <span id="stopwatchDisplay" class="stopwatch-display">00:00.0</span>
