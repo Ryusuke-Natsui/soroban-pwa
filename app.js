@@ -484,6 +484,8 @@ function playFlashCurrentProblem() {
 
   stopFlashPlayback();
   const speed = Math.max(200, parseInt(el.flashSpeed.value, 10) || 800);
+  const blankDuration = Math.min(180, Math.max(60, Math.floor(speed * 0.2)));
+  const numberDuration = Math.max(80, speed - blankDuration);
   const sequence = [problem.nums[0], ...problem.nums.slice(1).map((n, i) => `${problem.ops[i]}${n}`)];
   let step = 0;
 
@@ -495,7 +497,17 @@ function playFlashCurrentProblem() {
     }
     el.flashDisplay.textContent = String(sequence[step]);
     step += 1;
-    flashTimerId = window.setTimeout(showStep, speed);
+
+    const hasNext = step < sequence.length;
+    if (!hasNext) {
+      flashTimerId = window.setTimeout(showStep, numberDuration);
+      return;
+    }
+
+    flashTimerId = window.setTimeout(() => {
+      el.flashDisplay.textContent = "";
+      flashTimerId = window.setTimeout(showStep, blankDuration);
+    }, numberDuration);
   };
 
   showStep();
